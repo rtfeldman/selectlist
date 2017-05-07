@@ -1,13 +1,13 @@
 {
     "version": "1.0.0",
     "summary": "A nonempty list in which exactly one element is always selected.",
-    "repository": "https://github.com/rtfeldman/ziplist.git",
+    "repository": "https://github.com/rtfeldman/selectlist.git",
     "license": "BSD-3-Clause",
     "source-directories": [
         "src"
     ],
     "exposed-modules": [
-        "ZipList"
+        "SelectList"
     ],
     "dependencies": {
         "elm-lang/core": "5.0.0 <= v < 6.0.0"

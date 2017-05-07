@@ -3,7 +3,7 @@ module Tests exposing (..)
 import Test exposing (..)
 import Expect exposing (Expectation)
 import Fuzz exposing (list, int, tuple, string)
-import ZipList
+import SelectList exposing (Position(..))
 import List.Extra
 
 
@@ -12,28 +12,23 @@ access =
     describe "before, selected, after"
         [ fuzzSegments "before" <|
             \beforeSel sel afterSel ->
-                ZipList.fromLists beforeSel sel afterSel
-                    |> ZipList.before
+                SelectList.fromLists beforeSel sel afterSel
+                    |> SelectList.before
                     |> Expect.equal beforeSel
         , fuzzSegments "selected" <|
             \beforeSel sel afterSel ->
-                ZipList.fromLists beforeSel sel afterSel
-                    |> ZipList.selected
+                SelectList.fromLists beforeSel sel afterSel
+                    |> SelectList.selected
                     |> Expect.equal sel
         , fuzzSegments "after" <|
             \beforeSel sel afterSel ->
-                ZipList.fromLists beforeSel sel afterSel
-                    |> ZipList.after
+                SelectList.fromLists beforeSel sel afterSel
+                    |> SelectList.after
                     |> Expect.equal afterSel
-        , fuzzSegments "segments" <|
-            \beforeSel sel afterSel ->
-                ZipList.fromLists beforeSel sel afterSel
-                    |> ZipList.segments
-                    |> Expect.equal { before = beforeSel, selected = sel, after = afterSel }
         , fuzzSegments "toList" <|
             \beforeSel sel afterSel ->
-                ZipList.fromLists beforeSel sel afterSel
-                    |> ZipList.toList
+                SelectList.fromLists beforeSel sel afterSel
+                    |> SelectList.toList
                     |> Expect.equal (beforeSel ++ sel :: afterSel)
         ]
 
@@ -43,34 +38,34 @@ transforming =
     describe "transforming" <|
         [ fuzzSegments "append" <|
             \beforeSel sel afterSel ->
-                ZipList.fromLists beforeSel sel afterSel
-                    |> ZipList.append beforeSel
-                    |> Expect.equal (ZipList.fromLists beforeSel sel (afterSel ++ beforeSel))
+                SelectList.fromLists beforeSel sel afterSel
+                    |> SelectList.append beforeSel
+                    |> Expect.equal (SelectList.fromLists beforeSel sel (afterSel ++ beforeSel))
         , fuzzSegments "prepend" <|
             \beforeSel sel afterSel ->
-                ZipList.fromLists beforeSel sel afterSel
-                    |> ZipList.prepend afterSel
-                    |> Expect.equal (ZipList.fromLists (afterSel ++ beforeSel) sel afterSel)
+                SelectList.fromLists beforeSel sel afterSel
+                    |> SelectList.prepend afterSel
+                    |> Expect.equal (SelectList.fromLists (afterSel ++ beforeSel) sel afterSel)
         , describe "mapBy"
             [ fuzzSegments "mapBy transforms every element" <|
                 \beforeSel sel afterSel ->
-                    ZipList.fromLists beforeSel sel afterSel
-                        |> ZipList.mapBy (\_ num -> num * sel)
+                    SelectList.fromLists beforeSel sel afterSel
+                        |> SelectList.mapBy (\_ num -> num * sel)
                         |> Expect.equal
-                            (ZipList.fromLists
+                            (SelectList.fromLists
                                 (List.map (\num -> num * sel) beforeSel)
                                 (sel * sel)
                                 (List.map (\num -> num * sel) afterSel)
                             )
             , fuzzSegments "mapBy passes the selected elem" <|
                 \beforeSel sel afterSel ->
-                    ZipList.fromLists beforeSel sel afterSel
-                        |> ZipList.mapBy (\isSelected _ -> isSelected)
+                    SelectList.fromLists beforeSel sel afterSel
+                        |> SelectList.mapBy (\isSelected _ -> isSelected)
                         |> Expect.equal
-                            (ZipList.fromLists
-                                (List.map (\_ -> False) beforeSel)
-                                True
-                                (List.map (\_ -> False) afterSel)
+                            (SelectList.fromLists
+                                (List.map (\_ -> BeforeSelected) beforeSel)
+                                Selected
+                                (List.map (\_ -> AfterSelected) afterSel)
                             )
             ]
         , describe "select"
@@ -79,26 +74,26 @@ transforming =
                     let
                         original =
                             -- make only the selected one negative
-                            ZipList.fromLists beforeSel sel afterSel
-                                |> ZipList.mapBy
-                                    (\isSelected elem ->
-                                        if isSelected then
+                            SelectList.fromLists beforeSel sel afterSel
+                                |> SelectList.mapBy
+                                    (\position elem ->
+                                        if position == Selected then
                                             negate elem
                                         else
                                             elem
                                     )
                     in
                         original
-                            |> ZipList.select (\num -> num < 0)
+                            |> SelectList.select (\num -> num < 0)
                             |> Expect.equal original
             , fuzzSegments "is a no-op when the predicate fails every time" <|
                 \beforeSel sel afterSel ->
                     let
                         original =
-                            ZipList.fromLists beforeSel sel afterSel
+                            SelectList.fromLists beforeSel sel afterSel
                     in
                         original
-                            |> ZipList.select (\num -> num < 0)
+                            |> SelectList.select (\num -> num < 0)
                             |> Expect.equal original
             , fuzzSegments "selects the first one it finds" <|
                 \beforeSel sel afterSel ->
@@ -111,46 +106,46 @@ transforming =
                                 |> List.Extra.find predicate
                                 |> Maybe.withDefault sel
                     in
-                        ZipList.fromLists beforeSel sel afterSel
-                            |> ZipList.select predicate
-                            |> ZipList.selected
+                        SelectList.fromLists beforeSel sel afterSel
+                            |> SelectList.select predicate
+                            |> SelectList.selected
                             |> Expect.equal firstInList
             , describe "selects the first one it finds in a hardcoded list"
                 [ test "where it's the beginning of the `before` list" <|
                     \() ->
-                        ZipList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 1 ]
-                            |> ZipList.select (\num -> num > 0)
-                            |> Expect.equal (ZipList.fromLists [] 1 [ 2, 3, 4, 5, 2, 1 ])
+                        SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 1 ]
+                            |> SelectList.select (\num -> num > 0)
+                            |> Expect.equal (SelectList.fromLists [] 1 [ 2, 3, 4, 5, 2, 1 ])
                 , test "where it's the middle of the `before` list" <|
                     \() ->
-                        ZipList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 1 ]
-                            |> ZipList.select (\num -> num > 1)
-                            |> Expect.equal (ZipList.fromLists [ 1 ] 2 [ 3, 4, 5, 2, 1 ])
+                        SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 1 ]
+                            |> SelectList.select (\num -> num > 1)
+                            |> Expect.equal (SelectList.fromLists [ 1 ] 2 [ 3, 4, 5, 2, 1 ])
                 , test "where it's the end of the `before` list" <|
                     \() ->
-                        ZipList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 1 ]
-                            |> ZipList.select (\num -> num > 2)
-                            |> Expect.equal (ZipList.fromLists [ 1, 2 ] 3 [ 4, 5, 2, 1 ])
+                        SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 1 ]
+                            |> SelectList.select (\num -> num > 2)
+                            |> Expect.equal (SelectList.fromLists [ 1, 2 ] 3 [ 4, 5, 2, 1 ])
                 , test "where it's the selected element in the list" <|
                     \() ->
-                        ZipList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 1 ]
-                            |> ZipList.select (\num -> num > 3)
-                            |> Expect.equal (ZipList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 1 ])
+                        SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 1 ]
+                            |> SelectList.select (\num -> num > 3)
+                            |> Expect.equal (SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 1 ])
                 , test "where it's the beginning of the `after` list" <|
                     \() ->
-                        ZipList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 5, 1 ]
-                            |> ZipList.select (\num -> num > 4)
-                            |> Expect.equal (ZipList.fromLists [ 1, 2, 3, 4 ] 5 [ 2, 5, 1 ])
+                        SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 5, 1 ]
+                            |> SelectList.select (\num -> num > 4)
+                            |> Expect.equal (SelectList.fromLists [ 1, 2, 3, 4 ] 5 [ 2, 5, 1 ])
                 , test "where it's the middle of the `after` list" <|
                     \() ->
-                        ZipList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 5, 6, 1, 6, 7 ]
-                            |> ZipList.select (\num -> num > 5)
-                            |> Expect.equal (ZipList.fromLists [ 1, 2, 3, 4, 5, 2, 5 ] 6 [ 1, 6, 7 ])
+                        SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 5, 6, 1, 6, 7 ]
+                            |> SelectList.select (\num -> num > 5)
+                            |> Expect.equal (SelectList.fromLists [ 1, 2, 3, 4, 5, 2, 5 ] 6 [ 1, 6, 7 ])
                 , test "where it's the end of the `after` list" <|
                     \() ->
-                        ZipList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 5, 6, 1, 6, 7 ]
-                            |> ZipList.select (\num -> num > 6)
-                            |> Expect.equal (ZipList.fromLists [ 1, 2, 3, 4, 5, 2, 5, 6, 1, 6 ] 7 [])
+                        SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 5, 6, 1, 6, 7 ]
+                            |> SelectList.select (\num -> num > 6)
+                            |> Expect.equal (SelectList.fromLists [ 1, 2, 3, 4, 5, 2, 5, 6, 1, 6 ] 7 [])
                 ]
             ]
         ]
