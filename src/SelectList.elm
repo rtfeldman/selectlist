@@ -5,6 +5,7 @@ module SelectList
         , after
         , append
         , before
+        , fromList
         , fromLists
         , map
         , mapBy
@@ -19,7 +20,7 @@ module SelectList
 
 It is an example of a list [zipper](https://en.wikipedia.org/wiki/Zipper_(data_structure)).
 
-@docs SelectList, fromLists, singleton
+@docs SelectList, fromLists, fromList, singleton
 
 
 ## Reading
@@ -169,6 +170,22 @@ map transform (SelectList beforeSel sel afterSel) =
 fromLists : List a -> a -> List a -> SelectList a
 fromLists =
     SelectList
+
+
+{-| -}
+fromList : List a -> Maybe (SelectList a)
+fromList list =
+    let
+        ( maybeHead, maybeTail ) =
+            ( List.head list, List.tail list )
+    in
+    Maybe.map2
+        (\head ->
+            \tail ->
+                fromLists [] head tail
+        )
+        maybeHead
+        maybeTail
 
 
 {-| Change the selected element to the first one which passes a
