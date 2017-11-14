@@ -1,25 +1,27 @@
 module SelectList
     exposing
-        ( SelectList
-        , map
-        , mapBy
-        , Position(..)
-        , fromLists
-        , select
-        , prepend
+        ( Position(..)
+        , SelectList
+        , after
         , append
         , before
-        , after
+        , decoder
+        , fromList
+        , fromLists
+        , map
+        , mapBy
+        , prepend
+        , select
         , selected
-        , toList
         , singleton
+        , toList
         )
 
 {-| A `SelectList` is a nonempty list which always has exactly one element selected.
 
 It is an example of a list [zipper](https://en.wikipedia.org/wiki/Zipper_(data_structure)).
 
-@docs SelectList, fromLists, singleton
+@docs SelectList, fromLists, fromList, singleton
 
 
 ## Reading
@@ -31,7 +33,14 @@ It is an example of a list [zipper](https://en.wikipedia.org/wiki/Zipper_(data_s
 
 @docs map, mapBy, Position, select, append, prepend
 
+
+## Decoding
+
+@docs decoder
+
 -}
+
+import Json.Decode
 
 
 {-| A nonempty list which always has exactly one element selected.
@@ -171,6 +180,22 @@ fromLists =
     SelectList
 
 
+{-| -}
+fromList : List a -> Maybe (SelectList a)
+fromList list =
+    let
+        ( maybeHead, maybeTail ) =
+            ( List.head list, List.tail list )
+    in
+    Maybe.map2
+        (\head ->
+            \tail ->
+                fromLists [] head tail
+        )
+        maybeHead
+        maybeTail
+
+
 {-| Change the selected element to the first one which passes a
 predicate function. If no elements pass, the `SelectList` is unchanged.
 
@@ -217,7 +242,7 @@ selectHelp isSelectable beforeList selectedElem afterList =
 
         ( first :: rest, _ ) ->
             if isSelectable first then
-                Just ( [], first, (rest ++ selectedElem :: afterList) )
+                Just ( [], first, rest ++ selectedElem :: afterList )
             else
                 case selectHelp isSelectable rest selectedElem afterList of
                     Nothing ->
@@ -270,3 +295,20 @@ prepend list (SelectList beforeSel sel afterSel) =
 toList : SelectList a -> List a
 toList (SelectList beforeSel sel afterSel) =
     beforeSel ++ sel :: afterSel
+
+
+{-| -}
+decoder : Json.Decode.Decoder a -> Json.Decode.Decoder (SelectList a)
+decoder itemDecoder =
+    let
+        createSelectList =
+            \list ->
+                case fromList list of
+                    Just selectList ->
+                        Json.Decode.succeed selectList
+
+                    Nothing ->
+                        Json.Decode.fail "expected list with more than one element"
+    in
+    Json.Decode.list itemDecoder
+        |> Json.Decode.andThen createSelectList
