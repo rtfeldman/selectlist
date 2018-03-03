@@ -1,18 +1,18 @@
 module SelectList
     exposing
-        ( SelectList
-        , map
-        , mapBy
-        , Position(..)
-        , fromLists
-        , select
-        , prepend
+        ( Position(..)
+        , SelectList
+        , after
         , append
         , before
-        , after
+        , fromLists
+        , map
+        , mapBy
+        , prepend
+        , select
         , selected
-        , toList
         , singleton
+        , toList
         )
 
 {-| A `SelectList` is a nonempty list which always has exactly one element selected.
@@ -217,7 +217,7 @@ selectHelp isSelectable beforeList selectedElem afterList =
 
         ( first :: rest, _ ) ->
             if isSelectable first then
-                Just ( [], first, (rest ++ selectedElem :: afterList) )
+                Just ( [], first, rest ++ selectedElem :: afterList )
             else
                 case selectHelp isSelectable rest selectedElem afterList of
                     Nothing ->

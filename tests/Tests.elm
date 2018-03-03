@@ -1,10 +1,10 @@
 module Tests exposing (..)
 
-import Test exposing (..)
 import Expect exposing (Expectation)
-import Fuzz exposing (list, int, tuple, string)
-import SelectList exposing (Position(..))
+import Fuzz exposing (int, list, string, tuple)
 import List.Extra
+import SelectList exposing (Position(..))
+import Test exposing (..)
 
 
 access : Test
@@ -83,18 +83,18 @@ transforming =
                                             elem
                                     )
                     in
-                        original
-                            |> SelectList.select (\num -> num < 0)
-                            |> Expect.equal original
+                    original
+                        |> SelectList.select (\num -> num < 0)
+                        |> Expect.equal original
             , fuzzSegments "is a no-op when the predicate fails every time" <|
                 \beforeSel sel afterSel ->
                     let
                         original =
                             SelectList.fromLists beforeSel sel afterSel
                     in
-                        original
-                            |> SelectList.select (\num -> num < 0)
-                            |> Expect.equal original
+                    original
+                        |> SelectList.select (\num -> num < 0)
+                        |> Expect.equal original
             , fuzzSegments "selects the first one it finds" <|
                 \beforeSel sel afterSel ->
                     let
@@ -106,10 +106,10 @@ transforming =
                                 |> List.Extra.find predicate
                                 |> Maybe.withDefault sel
                     in
-                        SelectList.fromLists beforeSel sel afterSel
-                            |> SelectList.select predicate
-                            |> SelectList.selected
-                            |> Expect.equal firstInList
+                    SelectList.fromLists beforeSel sel afterSel
+                        |> SelectList.select predicate
+                        |> SelectList.selected
+                        |> Expect.equal firstInList
             , describe "selects the first one it finds in a hardcoded list"
                 [ test "where it's the beginning of the `before` list" <|
                     \() ->
