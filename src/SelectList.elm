@@ -10,6 +10,7 @@ module SelectList
         , mapBy
         , prepend
         , select
+        , selectFromList
         , selected
         , singleton
         , toList
@@ -169,6 +170,37 @@ map transform (SelectList beforeSel sel afterSel) =
 fromLists : List a -> a -> List a -> SelectList a
 fromLists =
     SelectList
+
+
+{-| Build a SelectList from a list and a selection
+
+    import SelectList
+
+    isEven num =
+        num % 2 == 0
+
+
+    SelectList.selectFromList isEven [ 1, 2 , 3 , 4, 5, 6 ]
+
+    == SelectList.fromLists [ 1 ] 2 [ 3, 4, 5, 6 ]
+
+-}
+selectFromList : (a -> Bool) -> List a -> Maybe (SelectList a)
+selectFromList isSelectable list =
+    case list of
+        first :: rest ->
+            let
+                list =
+                    SelectList [] first rest
+                        |> select isSelectable
+            in
+                if isSelectable <| selected list then
+                    Just list
+                else
+                    Nothing
+
+        [] ->
+            Nothing
 
 
 {-| Change the selected element to the first one which passes a

@@ -83,18 +83,18 @@ transforming =
                                             elem
                                     )
                     in
-                    original
-                        |> SelectList.select (\num -> num < 0)
-                        |> Expect.equal original
+                        original
+                            |> SelectList.select (\num -> num < 0)
+                            |> Expect.equal original
             , fuzzSegments "is a no-op when the predicate fails every time" <|
                 \beforeSel sel afterSel ->
                     let
                         original =
                             SelectList.fromLists beforeSel sel afterSel
                     in
-                    original
-                        |> SelectList.select (\num -> num < 0)
-                        |> Expect.equal original
+                        original
+                            |> SelectList.select (\num -> num < 0)
+                            |> Expect.equal original
             , fuzzSegments "selects the first one it finds" <|
                 \beforeSel sel afterSel ->
                     let
@@ -106,10 +106,10 @@ transforming =
                                 |> List.Extra.find predicate
                                 |> Maybe.withDefault sel
                     in
-                    SelectList.fromLists beforeSel sel afterSel
-                        |> SelectList.select predicate
-                        |> SelectList.selected
-                        |> Expect.equal firstInList
+                        SelectList.fromLists beforeSel sel afterSel
+                            |> SelectList.select predicate
+                            |> SelectList.selected
+                            |> Expect.equal firstInList
             , describe "selects the first one it finds in a hardcoded list"
                 [ test "where it's the beginning of the `before` list" <|
                     \() ->
@@ -148,6 +148,24 @@ transforming =
                             |> Expect.equal (SelectList.fromLists [ 1, 2, 3, 4, 5, 2, 5, 6, 1, 6 ] 7 [])
                 ]
             ]
+        ]
+
+
+navigating : Test
+navigating =
+    describe "selectFromList" <|
+        [ fuzzSegments "with met condition" <|
+            \beforeSel sel afterSel ->
+                SelectList.selectFromList (\item -> item == sel) (beforeSel ++ (sel :: afterSel))
+                    |> Expect.equal (Just <| SelectList.select (\item -> item == sel) (SelectList.fromLists beforeSel sel afterSel))
+        , test "with empty list" <|
+            \() ->
+                SelectList.selectFromList (\item -> item == 3) []
+                    |> Expect.equal Nothing
+        , fuzzSegments "with unmet condition" <|
+            \beforeSel sel afterSel ->
+                SelectList.selectFromList (\item -> item == -1) (beforeSel ++ (sel :: afterSel))
+                    |> Expect.equal Nothing
         ]
 
 
