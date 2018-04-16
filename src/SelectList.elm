@@ -8,6 +8,7 @@ module SelectList
         , fromLists
         , map
         , mapBy
+        , move
         , prepend
         , select
         , selected
@@ -29,7 +30,7 @@ It is an example of a list [zipper](https://en.wikipedia.org/wiki/Zipper_(data_s
 
 ## Transforming
 
-@docs map, mapBy, Position, select, append, prepend
+@docs map, mapBy, move, Position, select, append, prepend
 
 -}
 
@@ -270,3 +271,90 @@ prepend list (SelectList beforeSel sel afterSel) =
 toList : SelectList a -> List a
 toList (SelectList beforeSel sel afterSel) =
     beforeSel ++ sel :: afterSel
+
+
+moveBack : Int -> SelectList a -> SelectList a
+moveBack delta ((SelectList beforeSel sel afterSel) as original) =
+    case beforeSel of
+        [] ->
+            -- nowhere to move
+            original
+
+        list ->
+            let
+                breakPos =
+                    (List.length list) - delta
+
+                takenItems =
+                    List.take breakPos list
+
+                droppedItems =
+                    List.drop breakPos list
+            in
+                case droppedItems of
+                    [] ->
+                        -- got a zero delta
+                        original
+
+                    newSel :: newAfterSel ->
+                        SelectList takenItems
+                            newSel
+                            (newAfterSel ++ sel :: afterSel)
+
+
+moveForward : Int -> SelectList a -> SelectList a
+moveForward delta ((SelectList beforeSel sel afterSel) as original) =
+    case afterSel of
+        [] ->
+            -- nowhere to move
+            original
+
+        list ->
+            let
+                breakPos =
+                    clamp 0 (List.length afterSel - 1) (delta - 1)
+
+                takenItems =
+                    List.take breakPos list
+
+                droppedItems =
+                    List.drop breakPos list
+            in
+                case droppedItems of
+                    [] ->
+                        -- got a zero delta
+                        original
+
+                    newSel :: newAfterSel ->
+                        SelectList (beforeSel ++ sel :: takenItems)
+                            newSel
+                            newAfterSel
+
+
+{-| Moves the selection of a `SelectList`. The first argument is a `delta`
+integer with the difference between the position of the new selected item and
+the current selected item.
+
+    SelectList.fromLists [ 1, 2 ] 3 [ 4, 5, 6 ]
+        |> SelectList.move 2
+
+    == SelectList.fromLists [ 1, 2, 3, 4] 5 [ 6 ]
+
+
+    SelectList.fromLists [ 1, 2 ] 3 [ 4, 5, 6 ]
+        |> SelectList.move -10
+
+    == SelectList.fromLists [] 1 [ 2, 3, 4, 5, 6 ]
+
+-}
+move : Int -> SelectList a -> SelectList a
+move delta selectList =
+    case compare delta 0 of
+        LT ->
+            moveBack (abs delta) selectList
+
+        GT ->
+            moveForward delta selectList
+
+        EQ ->
+            selectList
