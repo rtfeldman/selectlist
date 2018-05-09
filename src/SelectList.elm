@@ -205,8 +205,10 @@ selectHelp isSelectable beforeList selectedElem afterList =
         ( [], first :: rest ) ->
             if isSelectable selectedElem then
                 Just ( beforeList, selectedElem, afterList )
+
             else if isSelectable first then
                 Just ( beforeList ++ [ selectedElem ], first, rest )
+
             else
                 case selectHelp isSelectable [] first rest of
                     Nothing ->
@@ -218,6 +220,7 @@ selectHelp isSelectable beforeList selectedElem afterList =
         ( first :: rest, _ ) ->
             if isSelectable first then
                 Just ( [], first, rest ++ selectedElem :: afterList )
+
             else
                 case selectHelp isSelectable rest selectedElem afterList of
                     Nothing ->
