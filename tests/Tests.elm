@@ -151,6 +151,51 @@ transforming =
         ]
 
 
+move : Test
+move =
+    describe "move" <|
+        [ describe "with negative delta" <|
+            [ test "moves selection backwards" <|
+                \() ->
+                    SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 5, 6, 1, 6, 7 ]
+                        |> SelectList.move -2
+                        |> Expect.equal (SelectList.fromLists [ 1 ] 2 [ 3, 4, 5, 2, 5, 6, 1, 6, 7 ])
+            , test "is no-op if first item is already selected" <|
+                \() ->
+                    SelectList.fromLists [] 4 [ 5, 2, 5, 6, 1, 6, 7 ]
+                        |> SelectList.move -1
+                        |> Expect.equal (SelectList.fromLists [] 4 [ 5, 2, 5, 6, 1, 6, 7 ])
+            , test "handles delta values lower than the lists's lower bound" <|
+                \() ->
+                    SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 5, 6, 1, 6, 7 ]
+                        |> SelectList.move -6
+                        |> Expect.equal (SelectList.fromLists [] 1 [ 2, 3, 4, 5, 2, 5, 6, 1, 6, 7 ])
+            ]
+        , describe "with positive delta" <|
+            [ test "moves selection forward" <|
+                \() ->
+                    SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 5, 6, 1, 6, 7 ]
+                        |> SelectList.move 2
+                        |> Expect.equal (SelectList.fromLists [ 1, 2, 3, 4, 5 ] 2 [ 5, 6, 1, 6, 7 ])
+            , test "is no-op if last item is already selected" <|
+                \() ->
+                    SelectList.fromLists [ 5, 2, 5, 6, 1, 6, 7 ] 6 []
+                        |> SelectList.move 1
+                        |> Expect.equal (SelectList.fromLists [ 5, 2, 5, 6, 1, 6, 7 ] 6 [])
+            , test "handles delta values higher than the lists's upper bound" <|
+                \() ->
+                    SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 5, 6, 1, 6, 7 ]
+                        |> SelectList.move 10
+                        |> Expect.equal (SelectList.fromLists [ 1, 2, 3, 4, 5, 2, 5, 6, 1, 6 ] 7 [])
+            ]
+        , test "with zero delta is no-op" <|
+            \() ->
+                SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 5 ]
+                    |> SelectList.move 0
+                    |> Expect.equal (SelectList.fromLists [ 1, 2, 3 ] 4 [ 5, 2, 5 ])
+        ]
+
+
 {-| Choose positive ints so that we can throw a negative one in there and
 detect it later.
 -}
