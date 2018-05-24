@@ -237,7 +237,7 @@ selectHelp isSelectable beforeList selectedElem afterList =
     SelectList.fromLists [ 1, 2 ] 3 [ 4 ]
         |> SelectList.append [ 5, 6 ]
 
-    == SelectList.fromLists [ 1 ] 2 [ 3, 4, 5, 6 ]
+    == SelectList.fromLists [ 1, 2 ] 3 [ 4, 5, 6 ]
 
 -}
 append : List a -> SelectList a -> SelectList a
